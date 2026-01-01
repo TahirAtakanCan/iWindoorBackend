@@ -1,8 +1,11 @@
 package com.atablood.iWindoor_api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,9 +26,11 @@ public class WindowNode {
 
     // --- RECURSIVE RELATIONSHIP (AĞAÇ YAPISI) ---
 
-    // Ebeveyn (Üst parça)
+    // --- RECURSIVE DÜZELTME ---
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
+    @JsonIgnore // <--- JSON çıktısında üst düğüme gitme (Döngü kırma 2)
+    @ToString.Exclude // <--- Lombok ToString döngüsünü engelle
     private WindowNode parent;
 
     // Çocuklar (Alt parçalar)

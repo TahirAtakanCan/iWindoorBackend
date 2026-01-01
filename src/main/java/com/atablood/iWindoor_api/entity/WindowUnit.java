@@ -1,10 +1,12 @@
 package com.atablood.iWindoor_api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString; // Lombok kullanıyorsan bunu ekle
 import java.math.BigDecimal;
 
-@Data
+@Data // Lombok geri döndü
 @Entity
 @Table(name = "window_units")
 public class WindowUnit {
@@ -14,24 +16,22 @@ public class WindowUnit {
     private Long id;
 
     @Column(nullable = false)
-    private String name; // Örn: "Poz 1 - Mutfak"
+    private String name;
 
-    // Toplam Genişlik ve Yükseklik (mm)
     private Double width;
     private Double height;
 
-    private Integer quantity = 1; // Kaç adet üretilecek?
+    private Integer quantity = 1;
 
-    // Birim Fiyat (Tek bir pencerenin fiyatı)
     private BigDecimal unitPrice;
 
+    // --- KRİTİK DÜZELTME BURADA ---
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
+    @JsonIgnore // <--- JSON oluştururken bu alanı YOK SAY (Döngüyü kırar)
+    @ToString.Exclude // <--- LOMBOK İÇİN: Log basarken sonsuz döngüye girmesin
     private Project project;
 
-    // CRITICAL: Ağacın Kökü (Root Node)
-    // Her pencere, bir ana çerçeve (Frame) ile başlar.
-    // O çerçeve kendi içinde bölünür. İşte o kök düğüm burası.
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "root_node_id")
     private WindowNode rootNode;
