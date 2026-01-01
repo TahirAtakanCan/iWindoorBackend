@@ -1,0 +1,13 @@
+package com.atablood.iWindoor_api.service;
+
+import com.atablood.iWindoor_api.entity.Project;
+import com.atablood.iWindoor_api.entity.WindowUnit;
+import java.util.List;
+
+public interface ProjectService {
+    Project createProject(String customerName, String description);
+    Project getProject(Long id);
+
+    // Pencere Ekleme (Başlangıç seviyesi)
+    WindowUnit addWindowToProject(Long projectId, String windowName, Double width, Double height);
+}
