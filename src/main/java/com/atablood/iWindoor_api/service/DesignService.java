@@ -7,4 +7,6 @@ public interface DesignService {
     WindowNode splitNode(Long nodeId, boolean isVertical);
 
     WindowNode updateNodeType(Long nodeId, String nodeType);
+
+    WindowNode assignMaterial(Long nodeId, Long materialId, String materialType);
 }

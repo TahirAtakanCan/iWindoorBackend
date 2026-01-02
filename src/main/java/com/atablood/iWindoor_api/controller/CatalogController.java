@@ -2,6 +2,7 @@ package com.atablood.iWindoor_api.controller;
 
 import com.atablood.iWindoor_api.entity.Glass;
 import com.atablood.iWindoor_api.entity.Profile;
+import com.atablood.iWindoor_api.entity.ProfileType;
 import com.atablood.iWindoor_api.entity.Series;
 import com.atablood.iWindoor_api.service.CatalogService;
 import lombok.RequiredArgsConstructor; // Lombok çalışıyorsa kalsın, yoksa manuel constructor yaz
@@ -52,5 +53,11 @@ public class CatalogController {
     @GetMapping("/glasses")
     public ResponseEntity<List<Glass>> getAllGlasses() {
         return ResponseEntity.ok(catalogService.getAllGlasses());
+    }
+
+    // GET /api/v1/catalog/profiles/filter?type=SASH
+    @GetMapping("/profiles/filter")
+    public ResponseEntity<List<Profile>> getProfilesByType(@RequestParam ProfileType type) {
+        return ResponseEntity.ok(catalogService.getProfilesByType(type));
     }
 }

@@ -26,4 +26,12 @@ public class DesignController {
                                                      @RequestParam String type) {
         return ResponseEntity.ok(designService.updateNodeType(nodeId, type));
     }
+
+    // POST /api/v1/design/assign-material/5?materialId=2&type=PROFILE
+    @PostMapping("/assign-material/{nodeId}")
+    public ResponseEntity<WindowNode> assignMaterial(@PathVariable Long nodeId,
+                                                     @RequestParam Long materialId,
+                                                     @RequestParam String type) { // type: "PROFILE" veya "GLASS"
+        return ResponseEntity.ok(designService.assignMaterial(nodeId, materialId, type));
+    }
 }

@@ -2,6 +2,7 @@ package com.atablood.iWindoor_api.service;
 
 import com.atablood.iWindoor_api.entity.Glass;
 import com.atablood.iWindoor_api.entity.Profile;
+import com.atablood.iWindoor_api.entity.ProfileType;
 import com.atablood.iWindoor_api.entity.Series;
 import java.util.List;
 
@@ -17,4 +18,8 @@ public interface CatalogService {
     // Cam İşlemleri
     Glass createGlass(Glass glass);
     List<Glass> getAllGlasses();
+
+    // Service Interface
+    List<Profile> getProfilesByType(ProfileType type);
+
 }

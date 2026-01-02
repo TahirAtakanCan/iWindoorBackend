@@ -2,6 +2,7 @@ package com.atablood.iWindoor_api.service.impl;
 
 import com.atablood.iWindoor_api.entity.Glass;
 import com.atablood.iWindoor_api.entity.Profile;
+import com.atablood.iWindoor_api.entity.ProfileType;
 import com.atablood.iWindoor_api.entity.Series;
 import com.atablood.iWindoor_api.repository.GlassRepository;
 import com.atablood.iWindoor_api.repository.ProfileRepository;
@@ -50,5 +51,11 @@ public class CatalogServiceImpl implements CatalogService {
     @Override
     public List<Glass> getAllGlasses() {
         return glassRepository.findAll();
+    }
+
+    // Service Impl
+    @Override
+    public List<Profile> getProfilesByType(ProfileType type) {
+        return profileRepository.findByType(type);
     }
 }
