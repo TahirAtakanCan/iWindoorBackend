@@ -2,6 +2,7 @@ package com.atablood.iWindoor_api.controller;
 
 import com.atablood.iWindoor_api.entity.Project;
 import com.atablood.iWindoor_api.entity.WindowUnit;
+import com.atablood.iWindoor_api.service.PricingService;
 import com.atablood.iWindoor_api.service.ProjectService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final PricingService pricingService;
 
     // 1. Yeni Proje Oluştur
     @PostMapping
@@ -41,6 +43,13 @@ public class ProjectController {
                         request.getHeight()
                 )
         );
+    }
+
+    // POST /api/v1/projects/{id}/calculate-price
+    @PostMapping("/{id}/calculate-price")
+    public ResponseEntity<Void> calculatePrice(@PathVariable Long id) {
+        pricingService.calculateProjectPrice(id);
+        return ResponseEntity.ok().build();
     }
 
     // İstek gövdesi için geçici sınıf (Inner Class)

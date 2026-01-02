@@ -8,6 +8,7 @@ import com.atablood.iWindoor_api.repository.GlassRepository;
 import com.atablood.iWindoor_api.repository.ProfileRepository;
 import com.atablood.iWindoor_api.repository.WindowNodeRepository;
 import com.atablood.iWindoor_api.service.DesignService;
+import com.atablood.iWindoor_api.service.PricingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,9 @@ public class DesignServiceImpl implements DesignService {
     private final WindowNodeRepository windowNodeRepository;
     private final ProfileRepository profileRepository;
     private final GlassRepository glassRepository;
+
+    // İleride otomatik hesaplama tetiklemek istersen burada dursun
+    private final PricingService pricingService;
 
     @Override
     @Transactional
@@ -32,27 +36,35 @@ public class DesignServiceImpl implements DesignService {
                 isVertical ? NodeType.MULLION_VERTICAL : NodeType.MULLION_HORIZONTAL
         );
 
+        // Eğer bölünen parça daha önce bir profil veya cama sahipse, bunları temizle
+        // Çünkü artık bu bir taşıyıcı (Mullion) oldu, içindekiler boşluk (Empty) olacak.
+        node.setProfile(null);
+        node.setGlass(null);
+
         // Eşit bölme (ileride profil kalınlığı düşülebilir)
         double newWidth = isVertical ? node.getWidth() / 2 : node.getWidth();
         double newHeight = isVertical ? node.getHeight() : node.getHeight() / 2;
 
-        // Sol / Üst çocuk
-        WindowNode child1 = new WindowNode();
-        child1.setNodeType(NodeType.EMPTY);
-        child1.setWidth(newWidth);
-        child1.setHeight(newHeight);
-        child1.setItemOrder(0);
-        node.addChild(child1);
+        // Sol / Üst çocuk oluştur
+        createChildNode(node, newWidth, newHeight, 0);
 
-        // Sağ / Alt çocuk
-        WindowNode child2 = new WindowNode();
-        child2.setNodeType(NodeType.EMPTY);
-        child2.setWidth(newWidth);
-        child2.setHeight(newHeight);
-        child2.setItemOrder(1);
-        node.addChild(child2);
+        // Sağ / Alt çocuk oluştur
+        createChildNode(node, newWidth, newHeight, 1);
 
         return windowNodeRepository.save(node);
+    }
+
+    // Kod tekrarını önlemek için yardımcı metod
+    private void createChildNode(WindowNode parent, double w, double h, int order) {
+        WindowNode child = new WindowNode();
+        child.setNodeType(NodeType.EMPTY);
+        child.setWidth(w);
+        child.setHeight(h);
+        child.setItemOrder(order);
+
+        // İlişkiyi çift taraflı kurmak (JPA için sağlıklı olan)
+        child.setParent(parent);
+        parent.getChildren().add(child);
     }
 
     @Override
@@ -65,7 +77,7 @@ public class DesignServiceImpl implements DesignService {
         try {
             NodeType newType = NodeType.valueOf(nodeTypeStr);
 
-            // Taşıyıcı elemanlar değiştirilemez
+            // Taşıyıcı elemanlar (Kasa ve Kayıtlar) değiştirilemez
             if (node.getNodeType() == NodeType.FRAME ||
                     node.getNodeType() == NodeType.MULLION_VERTICAL ||
                     node.getNodeType() == NodeType.MULLION_HORIZONTAL) {
@@ -73,6 +85,10 @@ public class DesignServiceImpl implements DesignService {
             }
 
             node.setNodeType(newType);
+
+            // Eğer tipi değiştiyse (Örn: Camdan Kanata geçtiyse) eski malzemeleri temizlemek iyi olabilir
+            // Şimdilik kalsın, assignMaterial ile üzerine yazarız.
+
             return windowNodeRepository.save(node);
 
         } catch (IllegalArgumentException e) {
@@ -92,7 +108,7 @@ public class DesignServiceImpl implements DesignService {
             Profile profile = profileRepository.findById(materialId)
                     .orElseThrow(() -> new RuntimeException("Profil bulunamadı"));
 
-            // İleride nodeType ↔ profileType validasyonu eklenebilir
+            // Profil atandıysa camı sil (Aynı node hem profil hem cam olamaz mantığıyla)
             node.setProfile(profile);
             node.setGlass(null);
 
@@ -101,6 +117,7 @@ public class DesignServiceImpl implements DesignService {
             Glass glass = glassRepository.findById(materialId)
                     .orElseThrow(() -> new RuntimeException("Cam bulunamadı"));
 
+            // Cam atandıysa profili sil
             node.setGlass(glass);
             node.setProfile(null);
 
