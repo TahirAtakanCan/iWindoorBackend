@@ -1,54 +1,63 @@
 package com.atablood.iWindoor_api.controller;
 
 import com.atablood.iWindoor_api.entity.Project;
-import com.atablood.iWindoor_api.repository.ProjectRepository;
+import com.atablood.iWindoor_api.entity.WindowUnit;
 import com.atablood.iWindoor_api.service.PricingService;
+import com.atablood.iWindoor_api.service.ProjectService; // Service import edildi
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/projects")
 @RequiredArgsConstructor
 public class ProjectController {
 
-    private final ProjectRepository projectRepository;
+    // ARTIK REPOSITORY DEĞİL, SERVICE KULLANIYORUZ
+    private final ProjectService projectService;
     private final PricingService pricingService;
 
-    // 1. TÜM PROJELERİ GETİR (LİSTE)
-    // GET /api/v1/projects
+    // 1. TÜM PROJELERİ GETİR
     @GetMapping
     public ResponseEntity<List<Project>> getAllProjects() {
-        return ResponseEntity.ok(projectRepository.findAll());
+        return ResponseEntity.ok(projectService.getAllProjects());
     }
 
-    // 2. TEK PROJE GETİR (DETAY)
-    // GET /api/v1/projects/1
+    // 2. TEK PROJE GETİR
     @GetMapping("/{id}")
     public ResponseEntity<Project> getProject(@PathVariable Long id) {
-        return projectRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(projectService.getProject(id));
     }
 
     // 3. YENİ PROJE OLUŞTUR
-    // POST /api/v1/projects
     @PostMapping
     public ResponseEntity<Project> createProject(@RequestBody Project project) {
-        // Yeni proje oluştururken fiyatı 0, listesi boş başlar
-        project.setTotalPrice(java.math.BigDecimal.ZERO);
-        project.setWindowUnits(new java.util.ArrayList<>());
-
-        return ResponseEntity.ok(projectRepository.save(project));
+        return ResponseEntity.ok(projectService.createProject(project));
     }
 
     // 4. FİYAT HESAPLA
-    // POST /api/v1/projects/1/calculate-price
     @PostMapping("/{id}/calculate-price")
     public ResponseEntity<Void> calculatePrice(@PathVariable Long id) {
         pricingService.calculateProjectPrice(id);
         return ResponseEntity.ok().build();
+    }
+
+    // 5. PROJEYE PENCERE EKLE (VE ROOT NODE OLUŞTUR) 🪟
+    // Burası artık Service katmanındaki o "Magic Part"ı çağırıyor!
+    @PostMapping("/{id}/windows")
+    public ResponseEntity<WindowUnit> addWindow(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
+
+        String name = (String) payload.get("name");
+        // JSON'dan gelen sayılar bazen Integer bazen Double olabilir, garantiye alalım:
+        Double width = Double.valueOf(payload.get("width").toString());
+        Double height = Double.valueOf(payload.get("height").toString());
+
+        // Servise devret, o halletsin
+        WindowUnit newUnit = projectService.addWindowToProject(id, name, width, height);
+
+        return ResponseEntity.ok(newUnit);
     }
 }

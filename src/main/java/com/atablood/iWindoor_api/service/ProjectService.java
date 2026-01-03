@@ -6,8 +6,9 @@ import java.util.List;
 
 public interface ProjectService {
     Project createProject(String customerName, String description);
-    Project getProject(Long id);
 
-    // Pencere Ekleme (Başlangıç seviyesi)
+    Project createProject(Project project); // Parametre tipini entity yaptım, controller ile uyumlu olsun
+    List<Project> getAllProjects(); // Listeleme eklendi
+    Project getProject(Long id);
     WindowUnit addWindowToProject(Long projectId, String windowName, Double width, Double height);
 }
