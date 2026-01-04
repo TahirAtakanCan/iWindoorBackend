@@ -60,4 +60,29 @@ public class ProjectController {
 
         return ResponseEntity.ok(newUnit);
     }
+
+    // 6. PROJE BİLGİLERİNİ GÜNCELLE
+    // PUT /api/v1/projects/{id}
+    @PutMapping("/{id}")
+    public ResponseEntity<Project> updateProject(@PathVariable Long id, @RequestBody Project projectDetails) {
+        try {
+            // Repository yerine Service kullanıyoruz
+            return ResponseEntity.ok(projectService.updateProject(id, projectDetails));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // 7. PROJEYİ SİL
+    // DELETE /api/v1/projects/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
+        try {
+            // Repository yerine Service kullanıyoruz
+            projectService.deleteProject(id);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

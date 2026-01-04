@@ -73,4 +73,25 @@ public class ProjectServiceImpl implements ProjectService {
         unit.setRootNode(rootNode);
         return windowUnitRepository.save(unit);
     }
+
+    @Override
+    public Project updateProject(Long id, Project projectDetails) {
+        // Mevcut projeyi bul (Yoksa hata fırlatır)
+        Project project = getProject(id);
+
+        // Sadece isim ve açıklamayı güncelle
+        project.setName(projectDetails.getName());
+        project.setDescription(projectDetails.getDescription());
+
+        return projectRepository.save(project);
+    }
+
+    @Override
+    public void deleteProject(Long id) {
+        if (projectRepository.existsById(id)) {
+            projectRepository.deleteById(id);
+        } else {
+            throw new RuntimeException("Silinecek proje bulunamadı: " + id);
+        }
+    }
 }
