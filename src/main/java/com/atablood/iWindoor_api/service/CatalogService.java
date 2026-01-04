@@ -22,4 +22,6 @@ public interface CatalogService {
     // Service Interface
     List<Profile> getProfilesByType(ProfileType type);
 
+    void updateProfilePrice(Long id, java.math.BigDecimal newPrice);
+
 }

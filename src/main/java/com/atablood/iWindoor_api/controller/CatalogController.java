@@ -60,4 +60,13 @@ public class CatalogController {
     public ResponseEntity<List<Profile>> getProfilesByType(@RequestParam ProfileType type) {
         return ResponseEntity.ok(catalogService.getProfilesByType(type));
     }
+
+    // ...
+    // FİYAT GÜNCELLE
+    // PUT /api/v1/catalog/profiles/{id}/price?price=150.50
+    @PutMapping("/profiles/{id}/price")
+    public ResponseEntity<Void> updateProfilePrice(@PathVariable Long id, @RequestParam java.math.BigDecimal price) {
+        catalogService.updateProfilePrice(id, price);
+        return ResponseEntity.ok().build();
+    }
 }

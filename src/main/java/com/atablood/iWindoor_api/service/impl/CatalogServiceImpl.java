@@ -58,4 +58,14 @@ public class CatalogServiceImpl implements CatalogService {
     public List<Profile> getProfilesByType(ProfileType type) {
         return profileRepository.findByType(type);
     }
+
+    // Price Impl
+    @Override
+    public void updateProfilePrice(Long id, java.math.BigDecimal newPrice) {
+        Profile profile = profileRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Profil bulunamadı"));
+        profile.setPricePerMeter(newPrice);
+        profileRepository.save(profile);
+    }
 }
+
