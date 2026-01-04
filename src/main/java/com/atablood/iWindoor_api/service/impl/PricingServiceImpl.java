@@ -11,6 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
+import com.atablood.iWindoor_api.dto.CostItemDTO;
+import com.atablood.iWindoor_api.dto.ProjectCostSummaryDTO;
+import com.atablood.iWindoor_api.entity.*;
+import java.util.Map;
+import java.util.HashMap;
+
 @Service
 @RequiredArgsConstructor
 public class PricingServiceImpl implements PricingService {
@@ -79,5 +85,90 @@ public class PricingServiceImpl implements PricingService {
 
         System.out.println("   -> Parça Toplamı: " + nodeCost);
         return nodeCost;
+    }
+
+    @Override
+    public ProjectCostSummaryDTO getProjectCostSummary(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Proje bulunamadı"));
+
+        ProjectCostSummaryDTO summary = new ProjectCostSummaryDTO();
+
+        // Malzemeleri toplamak için geçici haritalar (Adına göre grupla)
+        Map<String, CostItemDTO> profileMap = new HashMap<>();
+        Map<String, CostItemDTO> glassMap = new HashMap<>();
+
+        // Tüm pencereleri gez
+        for (WindowUnit unit : project.getWindowUnits()) {
+            if (unit.getRootNode() != null) {
+                collectMaterials(unit.getRootNode(), profileMap, glassMap);
+            }
+        }
+
+        // Toplanan verileri rapora ekle
+        profileMap.values().forEach(summary::addItem);
+        glassMap.values().forEach(summary::addItem);
+
+        // (İleride Aksesuarları da buraya ekleyeceğiz)
+
+        return summary;
+    }
+
+    // Recursive (Özyinelemeli) Malzeme Toplayıcı
+    private void collectMaterials(WindowNode node, Map<String, CostItemDTO> profileMap, Map<String, CostItemDTO> glassMap) {
+        // 1. Profil Hesabı
+        if (node.getProfile() != null) {
+            String name = node.getProfile().getName();
+            double lengthM = 0;
+
+            // Çevre hesabı (Basitçe: En + En + Boy + Boy) -> Ama bu node sadece bir parça olabilir.
+            // iWindoor mantığında Node bir "Alan"dır. Etrafındaki profiller hesaplanır.
+            // Şimdilik basitleştirilmiş mantık: Eğer bu bir Kasa veya Kanat ise çevresi kadar profil gider.
+            if (node.getNodeType() == NodeType.FRAME || node.getNodeType() == NodeType.SASH) {
+                lengthM = (node.getWidth() * 2 + node.getHeight() * 2) / 1000.0; // mm -> m
+            }
+            // Kayıt (Mullion) ise sadece kendi uzunluğu
+            else if (node.getNodeType() == NodeType.MULLION_VERTICAL) {
+                lengthM = node.getHeight() / 1000.0;
+            }
+            else if (node.getNodeType() == NodeType.MULLION_HORIZONTAL) {
+                lengthM = node.getWidth() / 1000.0;
+            }
+
+            if (lengthM > 0) {
+                BigDecimal cost = node.getProfile().getPricePerMeter().multiply(BigDecimal.valueOf(lengthM));
+
+                // Varsa üstüne ekle, yoksa yeni oluştur
+                profileMap.merge(name,
+                        new CostItemDTO(name, "Profil", lengthM, "m", cost),
+                        (oldItem, newItem) -> {
+                            oldItem.setQuantity(oldItem.getQuantity() + newItem.getQuantity());
+                            oldItem.setPrice(oldItem.getPrice().add(newItem.getPrice()));
+                            return oldItem;
+                        }
+                );
+            }
+        }
+
+        // 2. Cam Hesabı
+        if (node.getGlass() != null) {
+            String name = node.getGlass().getName();
+            double area = (node.getWidth() * node.getHeight()) / 1_000_000.0; // mm2 -> m2
+            BigDecimal cost = node.getGlass().getPricePerSquareMeter().multiply(BigDecimal.valueOf(area));
+
+            glassMap.merge(name,
+                    new CostItemDTO(name, "Cam", area, "m2", cost),
+                    (oldItem, newItem) -> {
+                        oldItem.setQuantity(oldItem.getQuantity() + newItem.getQuantity());
+                        oldItem.setPrice(oldItem.getPrice().add(newItem.getPrice()));
+                        return oldItem;
+                    }
+            );
+        }
+
+        // Çocukları gez
+        for (WindowNode child : node.getChildren()) {
+            collectMaterials(child, profileMap, glassMap);
+        }
     }
 }

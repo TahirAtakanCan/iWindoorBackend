@@ -1,5 +1,6 @@
 package com.atablood.iWindoor_api.controller;
 
+import com.atablood.iWindoor_api.dto.ProjectCostSummaryDTO;
 import com.atablood.iWindoor_api.entity.Project;
 import com.atablood.iWindoor_api.entity.WindowUnit;
 import com.atablood.iWindoor_api.service.PricingService;
@@ -84,5 +85,12 @@ public class ProjectController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    // 8. MALİYET ÖZETİ GETİR
+    // GET /api/v1/projects/{id}/cost-summary
+    @GetMapping("/{id}/cost-summary")
+    public ResponseEntity<ProjectCostSummaryDTO> getCostSummary(@PathVariable Long id) {
+        return ResponseEntity.ok(pricingService.getProjectCostSummary(id));
     }
 }
