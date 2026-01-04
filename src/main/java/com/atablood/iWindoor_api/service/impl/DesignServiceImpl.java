@@ -37,9 +37,9 @@ public class DesignServiceImpl implements DesignService {
         );
 
         // Eğer bölünen parça daha önce bir profil veya cama sahipse, bunları temizle
-        // Çünkü artık bu bir taşıyıcı (Mullion) oldu, içindekiler boşluk (Empty) olacak.
         node.setProfile(null);
         node.setGlass(null);
+        node.setStoredPrice(null); // Fiyat bilgisini de temizle
 
         // Eşit bölme (ileride profil kalınlığı düşülebilir)
         double newWidth = isVertical ? node.getWidth() / 2 : node.getWidth();
@@ -54,15 +54,12 @@ public class DesignServiceImpl implements DesignService {
         return windowNodeRepository.save(node);
     }
 
-    // Kod tekrarını önlemek için yardımcı metod
     private void createChildNode(WindowNode parent, double w, double h, int order) {
         WindowNode child = new WindowNode();
         child.setNodeType(NodeType.EMPTY);
         child.setWidth(w);
         child.setHeight(h);
         child.setItemOrder(order);
-
-        // İlişkiyi çift taraflı kurmak (JPA için sağlıklı olan)
         child.setParent(parent);
         parent.getChildren().add(child);
     }
@@ -77,7 +74,6 @@ public class DesignServiceImpl implements DesignService {
         try {
             NodeType newType = NodeType.valueOf(nodeTypeStr);
 
-            // Taşıyıcı elemanlar (Kasa ve Kayıtlar) değiştirilemez
             if (node.getNodeType() == NodeType.FRAME ||
                     node.getNodeType() == NodeType.MULLION_VERTICAL ||
                     node.getNodeType() == NodeType.MULLION_HORIZONTAL) {
@@ -85,10 +81,6 @@ public class DesignServiceImpl implements DesignService {
             }
 
             node.setNodeType(newType);
-
-            // Eğer tipi değiştiyse (Örn: Camdan Kanata geçtiyse) eski malzemeleri temizlemek iyi olabilir
-            // Şimdilik kalsın, assignMaterial ile üzerine yazarız.
-
             return windowNodeRepository.save(node);
 
         } catch (IllegalArgumentException e) {
@@ -108,18 +100,23 @@ public class DesignServiceImpl implements DesignService {
             Profile profile = profileRepository.findById(materialId)
                     .orElseThrow(() -> new RuntimeException("Profil bulunamadı"));
 
-            // Profil atandıysa camı sil (Aynı node hem profil hem cam olamaz mantığıyla)
             node.setProfile(profile);
             node.setGlass(null);
+
+            // --- YENİ: Fiyatı Sabitle (Snapshot) ---
+            // Profil atandığı andaki fiyatı node üzerine yazıyoruz.
+            node.setStoredPrice(profile.getPricePerMeter());
 
         } else if ("GLASS".equalsIgnoreCase(materialType)) {
 
             Glass glass = glassRepository.findById(materialId)
                     .orElseThrow(() -> new RuntimeException("Cam bulunamadı"));
 
-            // Cam atandıysa profili sil
             node.setGlass(glass);
             node.setProfile(null);
+
+            // --- YENİ: Fiyatı Sabitle (Snapshot) ---
+            node.setStoredPrice(glass.getPricePerSquareMeter());
 
         } else {
             throw new RuntimeException("Geçersiz materialType: " + materialType);

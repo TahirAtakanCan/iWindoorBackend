@@ -93,4 +93,12 @@ public class ProjectController {
     public ResponseEntity<ProjectCostSummaryDTO> getCostSummary(@PathVariable Long id) {
         return ResponseEntity.ok(pricingService.getProjectCostSummary(id));
     }
+
+    // 9. PROJE FİYATLARINI GÜNCEL KURA ÇEK
+    // POST /api/v1/projects/{id}/sync-prices
+    @PostMapping("/{id}/sync-prices")
+    public ResponseEntity<Void> syncPrices(@PathVariable Long id) {
+        projectService.syncProjectPrices(id);
+        return ResponseEntity.ok().build();
+    }
 }

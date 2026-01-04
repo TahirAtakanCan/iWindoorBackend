@@ -3,7 +3,8 @@ package com.atablood.iWindoor_api.service.impl;
 import com.atablood.iWindoor_api.entity.*;
 import com.atablood.iWindoor_api.repository.ProjectRepository;
 import com.atablood.iWindoor_api.repository.WindowUnitRepository;
-import com.atablood.iWindoor_api.repository.WindowNodeRepository; // Bunu da ekledim garanti olsun
+import com.atablood.iWindoor_api.repository.WindowNodeRepository;
+import com.atablood.iWindoor_api.service.PricingService; // PricingService Eklendi
 import com.atablood.iWindoor_api.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final WindowUnitRepository windowUnitRepository;
     private final WindowNodeRepository windowNodeRepository;
+    private final PricingService pricingService; // Hesaplama için gerekli
 
     @Override
     public Project createProject(String customerName, String description) {
@@ -26,10 +28,8 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public Project createProject(Project project) {
-        // Fiyat ve liste null gelirse patlamasın diye önlem
         if (project.getTotalPrice() == null) project.setTotalPrice(java.math.BigDecimal.ZERO);
         if (project.getWindowUnits() == null) project.setWindowUnits(new java.util.ArrayList<>());
-
         return projectRepository.save(project);
     }
 
@@ -56,33 +56,28 @@ public class ProjectServiceImpl implements ProjectService {
         unit.setHeight(height);
         unit.setQuantity(1);
 
-        // Önce üniteyi kaydedelim ki bir ID'si olsun (JPA bazen ID olmadan ilişki kurarken kızabilir)
         unit = windowUnitRepository.save(unit);
 
-        // OTOMATİK KÖK OLUŞTURMA (Magic Part 🪄)
         WindowNode rootNode = new WindowNode();
         rootNode.setNodeType(NodeType.FRAME);
         rootNode.setWidth(width);
         rootNode.setHeight(height);
         rootNode.setItemOrder(0);
 
-        // RootNode'u da ayrıca kaydedelim (Cascade ayarına güvenmek yerine garanti yol)
-        rootNode = windowNodeRepository.save(rootNode);
+        // --- YENİ: Varsayılan Fiyat (Eğer bir default profil varsa burada set edilebilir) ---
+        // Şimdilik null bırakıyoruz, kullanıcı malzeme atayınca fiyat gelecek.
 
-        // İlişkiyi kur ve güncelle
+        rootNode = windowNodeRepository.save(rootNode);
         unit.setRootNode(rootNode);
+
         return windowUnitRepository.save(unit);
     }
 
     @Override
     public Project updateProject(Long id, Project projectDetails) {
-        // Mevcut projeyi bul (Yoksa hata fırlatır)
         Project project = getProject(id);
-
-        // Sadece isim ve açıklamayı güncelle
         project.setName(projectDetails.getName());
         project.setDescription(projectDetails.getDescription());
-
         return projectRepository.save(project);
     }
 
@@ -92,6 +87,40 @@ public class ProjectServiceImpl implements ProjectService {
             projectRepository.deleteById(id);
         } else {
             throw new RuntimeException("Silinecek proje bulunamadı: " + id);
+        }
+    }
+
+    // --- YENİ: FİYATLARI GÜNCEL KURA ÇEK (SYNC) ---
+    @Override
+    @Transactional
+    public void syncProjectPrices(Long projectId) {
+        Project project = getProject(projectId);
+
+        // Tüm pencereleri gez
+        for (WindowUnit unit : project.getWindowUnits()) {
+            if (unit.getRootNode() != null) {
+                updateNodePricesRecursive(unit.getRootNode());
+            }
+        }
+
+        // Fiyatları yeniden hesapla ve kaydet
+        pricingService.calculateProjectPrice(projectId);
+    }
+
+    private void updateNodePricesRecursive(WindowNode node) {
+        // Profili varsa, storedPrice'ı güncel katalog fiyatıyla güncelle
+        if (node.getProfile() != null) {
+            node.setStoredPrice(node.getProfile().getPricePerMeter());
+        }
+        // Camı varsa, storedPrice'ı güncel katalog fiyatıyla güncelle
+        if (node.getGlass() != null) {
+            node.setStoredPrice(node.getGlass().getPricePerSquareMeter());
+        }
+
+        windowNodeRepository.save(node); // Güncellenen fiyatı kaydet
+
+        for (WindowNode child : node.getChildren()) {
+            updateNodePricesRecursive(child);
         }
     }
 }

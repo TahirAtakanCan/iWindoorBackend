@@ -13,5 +13,7 @@ public interface ProjectService {
     // --- YENİ EKLENENLER ---
     Project updateProject(Long id, Project projectDetails);
     void deleteProject(Long id);
+
+    void syncProjectPrices(Long projectId);
     WindowUnit addWindowToProject(Long projectId, String windowName, Double width, Double height);
 }

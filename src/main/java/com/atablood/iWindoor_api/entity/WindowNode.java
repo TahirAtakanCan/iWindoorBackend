@@ -64,6 +64,8 @@ public class WindowNode {
         child.setParent(this);
     }
 
+    private java.math.BigDecimal storedPrice;
+
     // WindowNode sınıfının içine, en alta ekledim. Lombok hatasını giderdik:
     public void setParent(WindowNode parent) {
         this.parent = parent;
