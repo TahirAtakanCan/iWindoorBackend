@@ -5,7 +5,7 @@ import com.atablood.iWindoor_api.entity.Profile;
 import com.atablood.iWindoor_api.entity.ProfileType;
 import com.atablood.iWindoor_api.entity.Series;
 import com.atablood.iWindoor_api.service.CatalogService;
-import lombok.RequiredArgsConstructor; // Lombok çalışıyorsa kalsın, yoksa manuel constructor yaz
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,13 +34,30 @@ public class CatalogController {
 
     @PostMapping("/profiles")
     public ResponseEntity<Profile> createProfile(@RequestBody Profile profile) {
-        // İpucu: JSON içinde "series": {"id": 1} şeklinde seri ID'si gelmeli
         return ResponseEntity.ok(catalogService.createProfile(profile));
+    }
+
+    // Tüm profilleri getiren endpoint (Ayarlar ekranı için gerekli olabilir)
+    @GetMapping("/profiles")
+    public ResponseEntity<List<Profile>> getAllProfiles() {
+        return ResponseEntity.ok(catalogService.getAllProfiles());
     }
 
     @GetMapping("/profiles/by-series/{seriesId}")
     public ResponseEntity<List<Profile>> getProfilesBySeries(@PathVariable Long seriesId) {
         return ResponseEntity.ok(catalogService.getProfilesBySeries(seriesId));
+    }
+
+    @GetMapping("/profiles/filter")
+    public ResponseEntity<List<Profile>> getProfilesByType(@RequestParam ProfileType type) {
+        return ResponseEntity.ok(catalogService.getProfilesByType(type));
+    }
+
+    // Profil Fiyatı Güncelle
+    @PutMapping("/profiles/{id}/price")
+    public ResponseEntity<Void> updateProfilePrice(@PathVariable Long id, @RequestParam java.math.BigDecimal price) {
+        catalogService.updateProfilePrice(id, price);
+        return ResponseEntity.ok().build();
     }
 
     // --- CAM İŞLEMLERİ ---
@@ -55,18 +72,10 @@ public class CatalogController {
         return ResponseEntity.ok(catalogService.getAllGlasses());
     }
 
-    // GET /api/v1/catalog/profiles/filter?type=SASH
-    @GetMapping("/profiles/filter")
-    public ResponseEntity<List<Profile>> getProfilesByType(@RequestParam ProfileType type) {
-        return ResponseEntity.ok(catalogService.getProfilesByType(type));
-    }
-
-    // ...
-    // FİYAT GÜNCELLE
-    // PUT /api/v1/catalog/profiles/{id}/price?price=150.50
-    @PutMapping("/profiles/{id}/price")
-    public ResponseEntity<Void> updateProfilePrice(@PathVariable Long id, @RequestParam java.math.BigDecimal price) {
-        catalogService.updateProfilePrice(id, price);
+    // Cam Fiyatı Güncelle (404 Hatasını Çözen Kısım)
+    @PutMapping("/glasses/{id}/price")
+    public ResponseEntity<Void> updateGlassPrice(@PathVariable Long id, @RequestParam java.math.BigDecimal price) {
+        catalogService.updateGlassPrice(id, price);
         return ResponseEntity.ok().build();
     }
 }

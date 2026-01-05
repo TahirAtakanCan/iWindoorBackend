@@ -13,15 +13,13 @@ public interface CatalogService {
 
     // Profil İşlemleri
     Profile createProfile(Profile profile);
+    List<Profile> getAllProfiles(); // <-- LİSTELEME İÇİN EKLENDİ
     List<Profile> getProfilesBySeries(Long seriesId);
+    List<Profile> getProfilesByType(ProfileType type);
+    void updateProfilePrice(Long id, java.math.BigDecimal newPrice);
 
     // Cam İşlemleri
     Glass createGlass(Glass glass);
     List<Glass> getAllGlasses();
-
-    // Service Interface
-    List<Profile> getProfilesByType(ProfileType type);
-
-    void updateProfilePrice(Long id, java.math.BigDecimal newPrice);
-
+    void updateGlassPrice(Long id, java.math.BigDecimal newPrice); // <-- EKSİK OLAN BUYDU
 }

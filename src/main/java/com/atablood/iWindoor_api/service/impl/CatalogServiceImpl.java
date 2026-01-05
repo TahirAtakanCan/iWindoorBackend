@@ -21,9 +21,9 @@ public class CatalogServiceImpl implements CatalogService {
     private final ProfileRepository profileRepository;
     private final GlassRepository glassRepository;
 
+    // --- SERİ ---
     @Override
     public Series createSeries(Series series) {
-        // İleride buraya kontrol ekleyebilirsin: "Aynı isimde seri var mı?"
         return seriesRepository.save(series);
     }
 
@@ -32,10 +32,15 @@ public class CatalogServiceImpl implements CatalogService {
         return seriesRepository.findAll();
     }
 
+    // --- PROFİL ---
     @Override
     public Profile createProfile(Profile profile) {
-        // Profilin serisi veritabanında var mı kontrolü yapılabilir
         return profileRepository.save(profile);
+    }
+
+    @Override
+    public List<Profile> getAllProfiles() {
+        return profileRepository.findAll();
     }
 
     @Override
@@ -43,6 +48,20 @@ public class CatalogServiceImpl implements CatalogService {
         return profileRepository.findBySeriesId(seriesId);
     }
 
+    @Override
+    public List<Profile> getProfilesByType(ProfileType type) {
+        return profileRepository.findByType(type);
+    }
+
+    @Override
+    public void updateProfilePrice(Long id, java.math.BigDecimal newPrice) {
+        Profile profile = profileRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Profil bulunamadı: " + id));
+        profile.setPricePerMeter(newPrice);
+        profileRepository.save(profile);
+    }
+
+    // --- CAM ---
     @Override
     public Glass createGlass(Glass glass) {
         return glassRepository.save(glass);
@@ -53,19 +72,11 @@ public class CatalogServiceImpl implements CatalogService {
         return glassRepository.findAll();
     }
 
-    // Service Impl
     @Override
-    public List<Profile> getProfilesByType(ProfileType type) {
-        return profileRepository.findByType(type);
-    }
-
-    // Price Impl
-    @Override
-    public void updateProfilePrice(Long id, java.math.BigDecimal newPrice) {
-        Profile profile = profileRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Profil bulunamadı"));
-        profile.setPricePerMeter(newPrice);
-        profileRepository.save(profile);
+    public void updateGlassPrice(Long id, java.math.BigDecimal newPrice) {
+        Glass glass = glassRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Cam bulunamadı: " + id));
+        glass.setPricePerSquareMeter(newPrice);
+        glassRepository.save(glass);
     }
 }
-
