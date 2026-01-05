@@ -8,6 +8,7 @@ import com.atablood.iWindoor_api.service.ProjectService; // Service import edild
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.atablood.iWindoor_api.dto.ProjectSpecsDTO;
 
 import java.util.List;
 import java.util.Map;
@@ -100,5 +101,12 @@ public class ProjectController {
     public ResponseEntity<Void> syncPrices(@PathVariable Long id) {
         projectService.syncProjectPrices(id);
         return ResponseEntity.ok().build();
+    }
+
+    // 10. PROJE TEKNİK ÖZETİ (MEO5)
+    // GET /api/v1/projects/{id}/specs
+    @GetMapping("/{id}/specs")
+    public ResponseEntity<ProjectSpecsDTO> getProjectSpecs(@PathVariable Long id) {
+        return ResponseEntity.ok(projectService.getProjectSpecs(id));
     }
 }

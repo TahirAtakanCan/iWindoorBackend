@@ -16,4 +16,6 @@ public interface ProjectService {
 
     void syncProjectPrices(Long projectId);
     WindowUnit addWindowToProject(Long projectId, String windowName, Double width, Double height);
+
+    com.atablood.iWindoor_api.dto.ProjectSpecsDTO getProjectSpecs(Long projectId);
 }
