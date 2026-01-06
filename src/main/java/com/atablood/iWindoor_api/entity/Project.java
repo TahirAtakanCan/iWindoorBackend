@@ -41,4 +41,8 @@ public class Project {
     // CascadeType.ALL: Projeyi silersem içindeki tüm pencereler de silinsin.
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<WindowUnit> windowUnits;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User createdBy;
 }
