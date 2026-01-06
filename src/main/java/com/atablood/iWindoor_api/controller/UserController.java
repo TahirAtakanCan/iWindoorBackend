@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -26,6 +27,7 @@ public class UserController {
     }
 
     // Yeni çalışan ekle
+    @PreAuthorize("hasAuthority('COMPANY_ADMIN')")
     @PostMapping
     public ResponseEntity<Void> createEmployee(
             @AuthenticationPrincipal User currentUser,

@@ -7,5 +7,6 @@ import lombok.NoArgsConstructor;
 @Data @Builder @AllArgsConstructor @NoArgsConstructor
 public class AuthenticationResponse {
     private String token;
+    private String role;
     private String errorMessage; // Hata durumunda mesaj dönebilmek için
 }
