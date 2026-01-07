@@ -9,4 +9,7 @@ public class AuthenticationResponse {
     private String token;
     private String role;
     private String errorMessage; // Hata durumunda mesaj dönebilmek için
+
+    private String fullName;
+    private String email;
 }
