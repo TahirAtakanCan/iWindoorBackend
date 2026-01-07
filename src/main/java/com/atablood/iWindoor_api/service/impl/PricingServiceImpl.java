@@ -37,7 +37,32 @@ public class PricingServiceImpl implements PricingService {
         projectRepository.save(project);
     }
 
-    // RECURSIVE HESAPLAMA FONKSİYONU
+    // --- MEO4 İÇİN GÜNCELLENEN METOD ---
+    @Override
+    public ProjectCostSummaryDTO calculateCostSummary(Project project) {
+        // Not: Burada tekrar repository'den çekmeye gerek yok,
+        // çünkü ProjectServiceImpl zaten güvenlik kontrolünü yapıp bize temiz nesneyi verdi.
+
+        ProjectCostSummaryDTO summary = new ProjectCostSummaryDTO();
+        Map<String, CostItemDTO> profileMap = new HashMap<>();
+        Map<String, CostItemDTO> glassMap = new HashMap<>();
+
+        if (project.getWindowUnits() != null) {
+            for (WindowUnit unit : project.getWindowUnits()) {
+                if (unit.getRootNode() != null) {
+                    collectMaterials(unit.getRootNode(), profileMap, glassMap);
+                }
+            }
+        }
+
+        profileMap.values().forEach(summary::addItem);
+        glassMap.values().forEach(summary::addItem);
+
+        return summary;
+    }
+
+    // --- YARDIMCI METODLAR (Aynı kalıyor) ---
+
     private double calculateNodeCost(WindowNode node) {
         double nodeCost = 0.0;
 
@@ -48,8 +73,6 @@ public class PricingServiceImpl implements PricingService {
         if (node.getProfile() != null) {
             double lengthM = 0.0;
 
-            // --- YENİ: Fiyat Kontrolü ---
-            // Eğer node üzerinde saklanmış fiyat varsa onu kullan, yoksa güncel profil fiyatını al.
             BigDecimal unitPriceBd = (node.getStoredPrice() != null)
                     ? node.getStoredPrice()
                     : node.getProfile().getPricePerMeter();
@@ -68,7 +91,7 @@ public class PricingServiceImpl implements PricingService {
             nodeCost += cost;
         }
 
-        // 2. CAM MALİYETİ (Eğer varsa eklenebilir, mantık aynı)
+        // 2. CAM MALİYETİ
         if (node.getGlass() != null) {
             BigDecimal unitPriceBd = (node.getStoredPrice() != null)
                     ? node.getStoredPrice()
@@ -78,7 +101,7 @@ public class PricingServiceImpl implements PricingService {
             nodeCost += (area * unitPriceBd.doubleValue());
         }
 
-        // 3. ÇOCUKLARIN MALİYETİNİ EKLE
+        // 3. ÇOCUKLAR
         if (node.getChildren() != null && !node.getChildren().isEmpty()) {
             for (WindowNode child : node.getChildren()) {
                 nodeCost += calculateNodeCost(child);
@@ -86,27 +109,6 @@ public class PricingServiceImpl implements PricingService {
         }
 
         return nodeCost;
-    }
-
-    @Override
-    public ProjectCostSummaryDTO getProjectCostSummary(Long projectId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Proje bulunamadı"));
-
-        ProjectCostSummaryDTO summary = new ProjectCostSummaryDTO();
-        Map<String, CostItemDTO> profileMap = new HashMap<>();
-        Map<String, CostItemDTO> glassMap = new HashMap<>();
-
-        for (WindowUnit unit : project.getWindowUnits()) {
-            if (unit.getRootNode() != null) {
-                collectMaterials(unit.getRootNode(), profileMap, glassMap);
-            }
-        }
-
-        profileMap.values().forEach(summary::addItem);
-        glassMap.values().forEach(summary::addItem);
-
-        return summary;
     }
 
     private void collectMaterials(WindowNode node, Map<String, CostItemDTO> profileMap, Map<String, CostItemDTO> glassMap) {
@@ -124,7 +126,6 @@ public class PricingServiceImpl implements PricingService {
             }
 
             if (lengthM > 0) {
-                // --- YENİ: Fiyat Kontrolü ---
                 BigDecimal unitPrice = (node.getStoredPrice() != null)
                         ? node.getStoredPrice()
                         : node.getProfile().getPricePerMeter();
@@ -147,7 +148,6 @@ public class PricingServiceImpl implements PricingService {
             String name = node.getGlass().getName();
             double area = (node.getWidth() * node.getHeight()) / 1_000_000.0;
 
-            // --- YENİ: Fiyat Kontrolü ---
             BigDecimal unitPrice = (node.getStoredPrice() != null)
                     ? node.getStoredPrice()
                     : node.getGlass().getPricePerSquareMeter();
@@ -164,8 +164,10 @@ public class PricingServiceImpl implements PricingService {
             );
         }
 
-        for (WindowNode child : node.getChildren()) {
-            collectMaterials(child, profileMap, glassMap);
+        if (node.getChildren() != null) {
+            for (WindowNode child : node.getChildren()) {
+                collectMaterials(child, profileMap, glassMap);
+            }
         }
     }
 }

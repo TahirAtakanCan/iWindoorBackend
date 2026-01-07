@@ -1,21 +1,22 @@
 package com.atablood.iWindoor_api.service;
 
+import com.atablood.iWindoor_api.dto.ProjectCostSummaryDTO;
+import com.atablood.iWindoor_api.dto.ProjectSpecsDTO;
 import com.atablood.iWindoor_api.entity.Project;
-import com.atablood.iWindoor_api.entity.WindowUnit;
+import com.atablood.iWindoor_api.entity.User; // Ekle
 import java.util.List;
 
 public interface ProjectService {
-    Project createProject(String customerName, String description);
+    // Artık metodlar 'User' parametresi alıyor
+    Project createProject(Project project, User currentUser);
 
-    Project createProject(Project project); // Parametre tipini entity yaptım, controller ile uyumlu olsun
-    List<Project> getAllProjects(); // Listeleme eklendi
-    Project getProject(Long id);
-    // --- YENİ EKLENENLER ---
-    Project updateProject(Long id, Project projectDetails);
-    void deleteProject(Long id);
+    List<Project> getAllProjects(User currentUser);
 
-    void syncProjectPrices(Long projectId);
-    WindowUnit addWindowToProject(Long projectId, String windowName, Double width, Double height);
+    Project getProject(Long id, User currentUser);
 
-    com.atablood.iWindoor_api.dto.ProjectSpecsDTO getProjectSpecs(Long projectId);
+    void deleteProject(Long id, User currentUser);
+
+    ProjectCostSummaryDTO getCostSummary(Long projectId, User currentUser);
+
+    ProjectSpecsDTO getProjectSpecs(Long projectId, User currentUser);
 }
